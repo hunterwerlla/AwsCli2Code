@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 
 // service2.json
 #[derive(Deserialize)]
@@ -19,7 +20,7 @@ pub struct Operation {
 pub enum Service2Shape {
     String,
     Structure {
-        required: Vec<String>,
+        required: Option<Vec<String>>,
         members: HashMap<String, ShapeReference>,
     },
     List {
@@ -49,12 +50,13 @@ pub struct Paginators1 {
 }
 
 // Final, resolved model
+#[derive(Debug)]
 pub enum Shape {
     String,
-    Structure,
-    List { member: Vec<Shape> },
+    Structure { members: HashMap<String, Shape> },
+    List { shape: Box<Shape> },
     Timestamp,
-    Map { value: HashMap<String, String> },
+    Map { key: Box<Shape>, value: Box<Shape> },
     Boolean,
     Integer,
     Long,
@@ -62,14 +64,11 @@ pub enum Shape {
 }
 
 pub struct Input {
-    pub name: String,
     pub required: bool,
     pub shape: Shape,
 }
 
 pub struct Api {
     pub paginator: bool,
-    pub inputs: Vec<Input>,
+    pub inputs: HashMap<String, Input>,
 }
-
-pub type ServiceModel = HashMap<String, Api>;
