@@ -49,7 +49,6 @@ pub struct Paginators1 {
 }
 
 // Final, resolved model
-#[derive(Debug)]
 pub enum Shape {
     String,
     Structure { members: HashMap<String, Shape> },
@@ -70,4 +69,13 @@ pub struct Input {
 pub struct Api {
     pub paginator: bool,
     pub inputs: HashMap<String, Input>,
+}
+
+pub enum ResolvedInput {
+    String { api: String, value: String },
+    Timestamp { value: String },
+    Boolean { value: bool },
+    Integer,
+    Long,
+    Blob,
 }
