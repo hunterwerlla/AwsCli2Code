@@ -1,12 +1,12 @@
 // aws s3api get-bucket-acl --bucket jetbrainss3testbucketa
 
+mod awssdk;
 mod cli;
 mod generator;
-mod parser;
 
+use crate::awssdk::definition_parser::Service2;
+use crate::awssdk::load_and_parse_service;
 use crate::cli::parse_command_line;
-use crate::parser::load_and_parse_service;
-use crate::parser::parser::Service2;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
