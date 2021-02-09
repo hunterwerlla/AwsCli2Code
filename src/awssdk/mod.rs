@@ -1,7 +1,7 @@
-pub mod definition_parser;
+pub mod awssdk;
 
-use crate::awssdk::definition_parser::{Api, Input, Paginators1, Service2Shape, Shape};
-use definition_parser::Service2;
+use crate::awssdk::awssdk::{Api, Input, Paginators1, Service2Shape, Shape};
+use awssdk::Service2;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
