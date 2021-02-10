@@ -71,6 +71,7 @@ pub struct Api {
     pub inputs: HashMap<String, Input>,
 }
 
+#[derive(Debug)]
 pub enum ResolvedInput {
     String { api: String, value: String },
     Timestamp { value: String },

@@ -1,3 +1,7 @@
+pub fn kebab_to_camel_case(input: &str) -> String {
+    lowercase(&kebab_to_pascal_case(input))
+}
+
 pub fn kebab_to_pascal_case(input: &str) -> String {
     let inputs = input.split("-");
     inputs.map(|x| capitalize(x)).collect()

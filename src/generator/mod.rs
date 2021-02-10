@@ -1,4 +1,3 @@
-use crate::awssdk::awssdk::Api;
 use crate::parser::Command;
 use crate::text::{capitalize, pascal_case_to_camel_case};
 
@@ -14,10 +13,14 @@ fn buildRequest(serviceName: &str, endpoint: &str) {
     println!("{}.{}()", serviceName, javaEndpoint)
 }
 
-pub fn generate(api: &Api, command: &Command) {
+pub fn generate(command: &Command) {
     // make client
     buildClient(&command.service);
     // make request
     buildRequest(&command.service, &command.endpoint);
     // execute request
+    command
+        .arguments
+        .iter()
+        .for_each(|item| println!("{:?}", item))
 }
