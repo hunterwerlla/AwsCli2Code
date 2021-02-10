@@ -3,7 +3,7 @@ use clap::{App, Arg};
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const NAME: &'static str = env!("CARGO_PKG_NAME");
 
-static SDKS: [&str; 4] = ["javav1", "javav2", "javascriptv2", "javascriptv3"];
+static SDKS: [&str; 2] = ["javav2", "javascriptv2"];
 static LANGUAGES: [&str; 4] = ["java", "kotlin", "javascript", "typescript"];
 
 pub struct ParsedArguments {

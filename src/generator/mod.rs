@@ -1,28 +1,34 @@
+mod java;
+mod javascript;
+
+use crate::generator::java::JavaSdkGenerator;
+use crate::generator::javascript::JavascriptSdkGenerator;
 use crate::parser::Command;
-use crate::text::{capitalize, pascal_case_to_camel_case};
+use std::collections::HashSet;
 
-// TODO make generic or whatever
-fn build_client(service_name: &str) {
-    let client = capitalize(service_name);
-    let client_name = format!("{}Client", client);
-    println!("{} {} = new {}()", client_name, service_name, client_name);
+trait SdkGenerator {
+    fn generate(&self, clients: HashSet<String>, sdk: &str, commands: Vec<Command>);
 }
 
-fn build_request(service_name: &str, endpoint: &str) {
-    let java_endpoint = pascal_case_to_camel_case(endpoint);
-    println!("{}.{}()", service_name, java_endpoint)
-}
-
-pub fn generate(commands: Vec<Command>) {
-    commands.iter().for_each(|command| {
-        // make client
-        build_client(&command.service);
-        // make request
-        build_request(&command.service, &command.endpoint);
-        // execute request
-        command
-            .arguments
-            .iter()
-            .for_each(|item| println!("{:?}", item))
-    })
+pub fn generate(sdk: &str, language: Option<&str>, commands: Vec<Command>) {
+    let clients: HashSet<String> =
+        HashSet::from(commands.iter().map(|i| i.service.to_string()).collect());
+    let generator = match sdk {
+        "javav2" => match language {
+            None => Box::new(JavaSdkGenerator {}) as Box<dyn SdkGenerator>,
+            Some(s) => match s {
+                "java" => Box::new(JavaSdkGenerator {}) as Box<dyn SdkGenerator>,
+                _ => panic!("Unknown javasdkv2 language {}", s),
+            },
+        },
+        "javascriptv2" => match language {
+            None => Box::new(JavascriptSdkGenerator {}) as Box<dyn SdkGenerator>,
+            Some(s) => match s {
+                "javascript" => Box::new(JavascriptSdkGenerator {}) as Box<dyn SdkGenerator>,
+                _ => panic!("Unknown javascriptv2 language {}", s),
+            },
+        },
+        _ => panic!("Unknown AWS SDK {}", sdk),
+    };
+    generator.generate(clients, sdk, commands)
 }
