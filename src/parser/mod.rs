@@ -16,21 +16,25 @@ fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> Vec<ResolvedI
     let mut iter = input.iter();
     let mut resolved_input = Vec::new();
     loop {
-        let next = match iter.next() {
+        let raw_flag = match iter.next() {
             Some(i) => i,
             None => break,
         };
         // TODO proper bool support
-        let input = kebab_to_camel_case(next.trim_start_matches("--no-").trim_start_matches("--"));
-        let input_type = endpoint.inputs.get(&input).unwrap();
+        let flag = kebab_to_camel_case(
+            raw_flag
+                .trim_start_matches("--no-")
+                .trim_start_matches("--"),
+        );
+        let input_type = endpoint.inputs.get(&flag).unwrap();
         resolved_input.push(match input_type.shape {
             Shape::String => ResolvedInput::String {
-                api: input,
+                api: flag,
                 value: iter.next().unwrap().to_string(),
             },
             Shape::Boolean => ResolvedInput::Boolean {
-                value: !input.starts_with("--no-"),
-                api: input,
+                api: flag,
+                value: !raw_flag.starts_with("--no-"),
             },
             _ => panic!("TODO"),
         });
