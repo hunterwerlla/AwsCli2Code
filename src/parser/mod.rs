@@ -1,9 +1,11 @@
-use crate::awssdk::awssdk::{Input, ResolvedInput, Shape};
+use crate::awssdk::awssdk::{ResolvedInput, Shape};
 use crate::awssdk::load_and_parse_service;
-use crate::text::{kebab_to_camel_case, kebab_to_pascal_case};
+use crate::text::{capitalize, kebab_to_camel_case, kebab_to_pascal_case};
 use std::collections::HashMap;
 
 static AWS_COMMAND: [&str; 2] = ["aws", "aws2"];
+static SEPARATORS: [&str; 3] = ["|", "&&", "||"];
+static AWS_PROFILE_VARIABLE: &str = "AWS_PROFILE";
 
 pub struct Command {
     pub service: String,
@@ -27,7 +29,11 @@ fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<Strin
                 .trim_start_matches("--"),
         );
         let input_type = match api_endpoint.inputs.get(&flag) {
-            None => panic!("Unknown argument {} for {}", flag, endpoint),
+            // S3 breaks convention so check PascalCase as well
+            None => match api_endpoint.inputs.get(&capitalize(&flag)) {
+                Some(s) => s,
+                None => panic!("Unknown argument {} for {}", flag, endpoint),
+            },
             Some(s) => s,
         };
         resolved_input.insert(
@@ -62,21 +68,30 @@ fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<Strin
     resolved_input
 }
 
+fn resolve_service(raw_service: &str) -> &str {
+    if raw_service == "s3api" {
+        "s3"
+    } else {
+        raw_service
+    }
+}
+
 fn command(command: &[String]) -> Command {
     let mut split_command = command.split(|i| AWS_COMMAND.iter().any(|command| command == i));
 
-    // TODO mess with environment variables later
     let beginning = split_command.next();
     if beginning == None {
         panic!("Command string does not contain `aws` or `aws2`!")
     }
+    // TODO mess with environment variables later
+
     let end = match split_command.next() {
         None => panic!("Command string has nothing after `aws` or `aws2`!"),
         Some(command) => command,
     };
     let service = match end.get(0) {
         None => panic!("No service specified!"),
-        Some(service) => service,
+        Some(service) => resolve_service(service),
     };
     let endpoint = match end.get(1) {
         None => panic!("No service call specified!"),
@@ -93,5 +108,8 @@ fn command(command: &[String]) -> Command {
 
 pub fn parse_sdk_input(input: Vec<String>) -> Vec<Command> {
     // TODO mess with pipes and other separators later
-    input.split(|i| i == "|").map(|c| command(c)).collect()
+    input
+        .split(|i| SEPARATORS.iter().any(|s| s == i))
+        .map(|c| command(c))
+        .collect()
 }

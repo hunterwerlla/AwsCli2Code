@@ -76,21 +76,26 @@ fn resolve(service: Service2, paginators: Option<Paginators1>) -> HashMap<String
             None => false,
             Some(p) => p.pagination.contains_key(key),
         };
-        let input = &value.input.shape;
-        let t = resolve_final_type(&shapes, input, true);
-        let a = match t {
-            Input {
-                shape: Shape::Structure { members },
-                ..
-            } => members,
-            _ => panic!("top level is not a structure"),
+        let inputs = match &value.input {
+            Some(s) => {
+                let input = &s.shape;
+                let t = resolve_final_type(&shapes, input, true);
+                match t {
+                    Input {
+                        shape: Shape::Structure { members },
+                        ..
+                    } => members,
+                    _ => panic!("top level is not a structure"),
+                }
+            }
+            None => HashMap::new(),
         };
 
         model.insert(
             key.to_string(),
             Api {
                 paginator: paginates,
-                inputs: a,
+                inputs,
             },
         );
     }

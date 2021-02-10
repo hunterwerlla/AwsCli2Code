@@ -42,7 +42,7 @@ fn build_request(command: &Command) {
                     .iter()
                     .map(|i| match i {
                         ResolvedInput::String { value } => {
-                            value.to_string()
+                            format!("\"{}\"", value)
                         }
                         _ => panic!("unable to handle list type yet"),
                     })

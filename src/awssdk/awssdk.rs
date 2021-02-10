@@ -11,7 +11,7 @@ pub struct ShapeReference {
 #[derive(Deserialize)]
 pub struct Operation {
     pub name: String,
-    pub input: ShapeReference,
+    pub input: Option<ShapeReference>,
 }
 
 #[derive(Deserialize)]
