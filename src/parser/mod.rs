@@ -6,11 +6,13 @@ use std::collections::HashMap;
 static AWS_COMMAND: [&str; 2] = ["aws", "aws2"];
 static SEPARATORS: [&str; 3] = ["|", "&&", "||"];
 static AWS_PROFILE_VARIABLE: &str = "AWS_PROFILE";
+static AWS_REGION_VARIABLE: &str = "AWS_REGION";
 
 pub struct Command {
     pub service: String,
     pub endpoint: String,
     pub arguments: HashMap<String, ResolvedInput>,
+    pub aws_profile: Option<String>,
 }
 
 fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<String, ResolvedInput> {
@@ -76,6 +78,30 @@ fn resolve_service(raw_service: &str) -> &str {
     }
 }
 
+// TODO mess with environment variables later
+fn parse_beginning(commands: &[String]) -> Option<String> {
+    let mut iter = commands.iter();
+    let mut profile: Option<String> = None;
+    loop {
+        let raw_flag = match iter.next() {
+            Some(i) => i,
+            None => break,
+        };
+        if raw_flag.starts_with(AWS_PROFILE_VARIABLE) {
+            // TODO put "/' in a better spot
+            let p = raw_flag
+                .trim_start_matches(AWS_PROFILE_VARIABLE)
+                .trim_start_matches("=")
+                .trim_matches('"')
+                .trim_matches('\'');
+            if !p.is_empty() {
+                profile = Some(p.to_string());
+            }
+        }
+    }
+    return profile;
+}
+
 fn command(command: &[String]) -> Command {
     let mut split_command = command.split(|i| AWS_COMMAND.iter().any(|command| command == i));
 
@@ -83,7 +109,7 @@ fn command(command: &[String]) -> Command {
     if beginning == None {
         panic!("Command string does not contain `aws` or `aws2`!")
     }
-    // TODO mess with environment variables later
+    let profile = parse_beginning(beginning.unwrap());
 
     let end = match split_command.next() {
         None => panic!("Command string has nothing after `aws` or `aws2`!"),
@@ -103,6 +129,7 @@ fn command(command: &[String]) -> Command {
         service: service.to_string(),
         endpoint,
         arguments: resolved_input,
+        aws_profile: profile,
     }
 }
 
