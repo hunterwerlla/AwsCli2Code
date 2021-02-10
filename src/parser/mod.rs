@@ -11,10 +11,10 @@ pub struct Command {
 }
 
 fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> Vec<ResolvedInput> {
-    let service = load_and_parse_service(&format!("resources/{}", service)).unwrap();
-    let endpoint = service.get(endpoint).unwrap();
+    let service_definition = load_and_parse_service(&format!("resources/{}", service)).unwrap();
+    let endpoint = service_definition.get(endpoint).unwrap();
     let mut iter = input.iter();
-    let mut resolvedInput = Vec::new();
+    let mut resolved_input = Vec::new();
     loop {
         let next = match iter.next() {
             Some(i) => i,
@@ -30,9 +30,9 @@ fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> Vec<ResolvedI
             },
             _ => panic!("TODO"),
         };
-        resolvedInput.push(i);
+        resolved_input.push(i);
     }
-    resolvedInput
+    resolved_input
 }
 
 pub fn parse_sdk_input(input: Vec<String>) -> Command {

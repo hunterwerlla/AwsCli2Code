@@ -51,7 +51,7 @@ pub struct Paginators1 {
 // Final, resolved model
 pub enum Shape {
     String,
-    Structure { members: HashMap<String, Shape> },
+    Structure { members: HashMap<String, Input> },
     List { shape: Box<Shape> },
     Timestamp,
     Map { key: Box<Shape>, value: Box<Shape> },
