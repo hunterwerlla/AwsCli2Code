@@ -71,12 +71,11 @@ pub struct Api {
     pub inputs: HashMap<String, Input>,
 }
 
-#[derive(Debug)]
 pub enum ResolvedInput {
-    String { api: String, value: String },
-    Timestamp { api: String, value: String },
-    Boolean { api: String, value: bool },
-    Integer,
-    Long,
-    Blob,
+    String { value: String },
+    Timestamp { value: String },
+    Boolean { value: bool },
+    Integer { value: i32 },
+    Long { value: i64 },
+    List { value: Vec<ResolvedInput> },
 }

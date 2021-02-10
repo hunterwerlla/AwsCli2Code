@@ -55,9 +55,11 @@ fn resolve_final_type(
             }
         }
         // TODO list and map
-        Service2Shape::List { .. } => Input {
+        Service2Shape::List { member } => Input {
             required: field_required,
-            shape: Shape::String,
+            shape: Shape::List {
+                shape: Box::from(resolve_final_type(shapes, &member.shape, false).shape),
+            },
         },
         Service2Shape::Map { .. } => Input {
             required: field_required,

@@ -19,7 +19,7 @@ pub fn parse_command_line() -> ParsedArguments {
             Arg::new("sdk")
                 .short('s')
                 .long("sdk")
-                .default_value("latest")
+                .default_value("javav2")
                 .about("Which AWS SDK to use")
                 .possible_values(&SDKS)
                 .required(true),
