@@ -83,27 +83,6 @@ fn resolve(service: Service2, paginators: Option<Paginators1>) -> HashMap<String
             } => members,
             _ => panic!("top level is not a structure"),
         };
-        /*
-        let (members, required) = match shapes.get(input) {
-            None => panic!("Invalid top level shape {} specified!", input),
-            Some(s) => match s {
-                Service2Shape::Structure { required, members } => (members, required),
-                _ => panic!("Top level shape {} is not a structure!", input),
-            },
-        };
-        for (k, v) in members {
-            let r = match &required {
-                None => false,
-                Some(p) => p.contains(k),
-            };
-            inputs.insert(
-                k.to_string(),
-                Input {
-                    required: r,
-                    shape: Shape::String,
-                },
-            );
-        }*/
 
         model.insert(
             key.to_string(),
@@ -117,16 +96,18 @@ fn resolve(service: Service2, paginators: Option<Paginators1>) -> HashMap<String
 }
 
 fn parse_paginators(path: &Path) -> Option<Paginators1> {
-    let paginators1file = if !path.exists() {
+    let paginators = if !path.exists() {
         return None;
     } else {
         match File::open(path) {
             Ok(file) => file,
-            Err(e) => return None,
+            Err(_) => return None,
         }
     };
-
-    None
+    match serde_json::from_reader(paginators) {
+        Ok(p) => p,
+        Err(_) => return None,
+    }
 }
 
 fn parse_service2(path: &Path) -> Result<Service2, std::io::Error> {

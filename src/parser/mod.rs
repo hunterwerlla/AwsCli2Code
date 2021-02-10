@@ -23,24 +23,22 @@ fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> Vec<ResolvedI
         // TODO proper bool support
         let input = kebab_to_camel_case(next.trim_start_matches("--no-").trim_start_matches("--"));
         let input_type = endpoint.inputs.get(&input).unwrap();
-        let i = match input_type.shape {
+        resolved_input.push(match input_type.shape {
             Shape::String => ResolvedInput::String {
                 api: input,
                 value: iter.next().unwrap().to_string(),
             },
+            Shape::Boolean => ResolvedInput::Boolean {
+                value: !input.starts_with("--no-"),
+                api: input,
+            },
             _ => panic!("TODO"),
-        };
-        resolved_input.push(i);
+        });
     }
     resolved_input
 }
 
-pub fn parse_sdk_input(input: Vec<String>) -> Command {
-    // TODO mess with pipes and other separators later
-    let command = match input.split(|i| i == "|").next() {
-        Some(segment) => segment,
-        None => input.as_slice(),
-    };
+fn command(command: &[String]) -> Command {
     let mut split_command = command.split(|i| AWS_COMMAND.iter().any(|command| command == i));
 
     // TODO mess with environment variables later
@@ -61,10 +59,15 @@ pub fn parse_sdk_input(input: Vec<String>) -> Command {
         Some(api) => kebab_to_pascal_case(api),
     };
     let flags = end.split_at(2).1;
-    let resolvedInput = parse_flags(service, &endpoint, flags);
+    let resolved_input = parse_flags(service, &endpoint, flags);
     Command {
         service: service.to_string(),
         endpoint,
-        arguments: resolvedInput,
+        arguments: resolved_input,
     }
+}
+
+pub fn parse_sdk_input(input: Vec<String>) -> Vec<Command> {
+    // TODO mess with pipes and other separators later
+    input.split(|i| i == "|").map(|c| command(c)).collect()
 }

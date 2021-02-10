@@ -74,8 +74,8 @@ pub struct Api {
 #[derive(Debug)]
 pub enum ResolvedInput {
     String { api: String, value: String },
-    Timestamp { value: String },
-    Boolean { value: bool },
+    Timestamp { api: String, value: String },
+    Boolean { api: String, value: bool },
     Integer,
     Long,
     Blob,
