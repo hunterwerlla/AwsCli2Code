@@ -1,5 +1,8 @@
-use crate::awssdk::awssdk::{ResolvedInput, Shape};
+mod jmespath;
+
+use crate::awssdk::awssdk::{Api, ResolvedInput, Shape};
 use crate::awssdk::load_and_parse_service;
+use crate::parser::jmespath::{parse_jmespath_query, JmespathQuery};
 use crate::text::{capitalize, kebab_to_camel_case, kebab_to_pascal_case};
 use std::collections::HashMap;
 
@@ -12,18 +15,32 @@ pub struct Command {
     pub service: String,
     pub endpoint: String,
     pub arguments: HashMap<String, ResolvedInput>,
+    pub query: Option<JmespathQuery>,
+    pub paginates: bool,
     pub aws_profile: Option<String>,
     pub aws_region: Option<String>,
 }
 
-fn parse_jmespath_query(input: &str) {
-    let whatever = jmespath::compile(input).unwrap();
-    println!("{}", whatever.as_str())
+fn parse_query(input: &[String]) -> Option<JmespathQuery> {
+    let mut iter = input.iter();
+    let mut query = None;
+    loop {
+        let flag = match iter.next() {
+            Some(i) => i,
+            None => break,
+        };
+        if flag == "--query" {
+            query = Some(parse_jmespath_query(iter.next().unwrap()));
+        }
+    }
+    return query;
 }
 
-fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<String, ResolvedInput> {
-    let service_definition = load_and_parse_service(&format!("resources/{}", service)).unwrap();
-    let api_endpoint = service_definition.get(endpoint).unwrap();
+fn parse_flags(
+    api_endpoint: &Api,
+    endpoint: &str,
+    input: &[String],
+) -> HashMap<String, ResolvedInput> {
     let mut iter = input.iter().peekable();
     let mut resolved_input = HashMap::new();
     loop {
@@ -36,13 +53,9 @@ fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<Strin
                 .trim_start_matches("--no-")
                 .trim_start_matches("--"),
         );
-        // Skip over output (for now) later it can be used to deduce jmespath
-        if flag == "output" {
+        // Skip over as we will parse these later
+        if flag == "output" || flag == "query" {
             iter.next();
-            continue;
-        }
-        if flag == "query" {
-            parse_jmespath_query(iter.next().unwrap());
             continue;
         }
         let input_type = match api_endpoint.inputs.get(&flag) {
@@ -151,11 +164,16 @@ fn command(command: &[String]) -> Command {
         Some(api) => kebab_to_pascal_case(api),
     };
     let flags = end.split_at(2).1;
-    let resolved_input = parse_flags(service, &endpoint, flags);
+    let service_definition = load_and_parse_service(&format!("resources/{}", service)).unwrap();
+    let api_endpoint = service_definition.get(&endpoint).unwrap();
+    let resolved_input = parse_flags(api_endpoint, &endpoint, flags);
+    let query = parse_query(flags);
     Command {
         service: service.to_string(),
-        endpoint,
         arguments: resolved_input,
+        endpoint,
+        query,
+        paginates: api_endpoint.paginator,
         aws_profile: profile,
         aws_region: region,
     }

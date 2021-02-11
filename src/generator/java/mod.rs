@@ -30,7 +30,12 @@ fn build_client(service_name: &str, aws_profile: &Option<String>, aws_region: &O
 
 fn build_request(command: &Command) {
     let java_endpoint = pascal_case_to_camel_case(&command.endpoint);
-    println!("{}.{}(", command.service, java_endpoint);
+    println!(
+        "{}.{}{}(",
+        command.service,
+        java_endpoint,
+        if command.paginates { "Paginator" } else { "" }
+    );
     println!("{}Request.builder()", command.endpoint);
     command.arguments.iter().for_each(|(key, v)| match v {
         ResolvedInput::String { value } => {
