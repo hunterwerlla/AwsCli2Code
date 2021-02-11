@@ -6,13 +6,14 @@ use std::collections::HashMap;
 static AWS_COMMAND: [&str; 2] = ["aws", "aws2"];
 static SEPARATORS: [&str; 3] = ["|", "&&", "||"];
 static AWS_PROFILE_VARIABLE: &str = "AWS_PROFILE";
-static AWS_REGION_VARIABLE: &str = "AWS_REGION";
+static AWS_REGION_VARIABLE: [&str; 2] = ["AWS_REGION", "AWS_DEFAULT_REGION"];
 
 pub struct Command {
     pub service: String,
     pub endpoint: String,
     pub arguments: HashMap<String, ResolvedInput>,
     pub aws_profile: Option<String>,
+    pub aws_region: Option<String>,
 }
 
 fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<String, ResolvedInput> {
@@ -30,6 +31,13 @@ fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<Strin
                 .trim_start_matches("--no-")
                 .trim_start_matches("--"),
         );
+        // Skip over output (for now) later it can be used to deduce jmespath
+        if flag == "output" {
+            continue;
+        }
+        if flag == "--query" {
+            continue;
+        }
         let input_type = match api_endpoint.inputs.get(&flag) {
             // S3 breaks convention so check PascalCase as well
             None => match api_endpoint.inputs.get(&capitalize(&flag)) {
@@ -79,9 +87,10 @@ fn resolve_service(raw_service: &str) -> &str {
 }
 
 // TODO mess with environment variables later
-fn parse_beginning(commands: &[String]) -> Option<String> {
+fn parse_beginning(commands: &[String]) -> (Option<String>, Option<String>) {
     let mut iter = commands.iter();
     let mut profile: Option<String> = None;
+    let mut region: Option<String> = None;
     loop {
         let raw_flag = match iter.next() {
             Some(i) => i,
@@ -98,8 +107,19 @@ fn parse_beginning(commands: &[String]) -> Option<String> {
                 profile = Some(p.to_string());
             }
         }
+        if AWS_REGION_VARIABLE.iter().any(|f| raw_flag.starts_with(f)) {
+            let p = raw_flag
+                .trim_start_matches(AWS_REGION_VARIABLE[0])
+                .trim_start_matches(AWS_REGION_VARIABLE[1])
+                .trim_start_matches("=")
+                .trim_matches('"')
+                .trim_matches('\'');
+            if !p.is_empty() {
+                region = Some(p.to_string());
+            }
+        }
     }
-    return profile;
+    return (profile, region);
 }
 
 fn command(command: &[String]) -> Command {
@@ -109,7 +129,7 @@ fn command(command: &[String]) -> Command {
     if beginning == None {
         panic!("Command string does not contain `aws` or `aws2`!")
     }
-    let profile = parse_beginning(beginning.unwrap());
+    let (profile, region) = parse_beginning(beginning.unwrap());
 
     let end = match split_command.next() {
         None => panic!("Command string has nothing after `aws` or `aws2`!"),
@@ -130,6 +150,7 @@ fn command(command: &[String]) -> Command {
         endpoint,
         arguments: resolved_input,
         aws_profile: profile,
+        aws_region: region,
     }
 }
 

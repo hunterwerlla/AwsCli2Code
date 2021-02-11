@@ -4,8 +4,7 @@ use crate::parser::Command;
 use crate::text::{capitalize, pascal_case_to_camel_case};
 use std::collections::HashSet;
 
-// TODO fix aws_profile
-fn build_client(service_name: &str, aws_profile: &Option<String>) {
+fn build_client(service_name: &str, aws_profile: &Option<String>, aws_region: &Option<String>) {
     let client = capitalize(service_name);
     let client_name = format!("{}Client", client);
     println!(
@@ -18,8 +17,15 @@ fn build_client(service_name: &str, aws_profile: &Option<String>) {
              profile
         ),
        None => {}
+    };
+    match aws_region {
+        Some(region) => println!(
+            ".region(Region.{})",
+            region.to_uppercase().replace("-", "_")
+        ),
+        None => {}
     }
-    println!("build();");
+    println!(".build();");
 }
 
 fn build_request(command: &Command) {
@@ -67,9 +73,10 @@ pub struct JavaSdkGenerator {}
 
 impl SdkGenerator for JavaSdkGenerator {
     fn generate(&self, clients: HashSet<String>, sdk: &str, commands: Vec<Command>) {
+        let first_command = &commands.first().unwrap();
         clients
             .iter()
-            .for_each(|i| build_client(i, &commands.first().unwrap().aws_profile));
+            .for_each(|i| build_client(i, &first_command.aws_profile, &first_command.aws_region));
         commands.iter().for_each(|i| build_request(i));
     }
 }
