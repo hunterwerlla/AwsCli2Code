@@ -16,6 +16,11 @@ pub struct Command {
     pub aws_region: Option<String>,
 }
 
+fn parse_jmespath_query(input: &str) {
+    let whatever = jmespath::compile(input).unwrap();
+    println!("{}", whatever.as_str())
+}
+
 fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<String, ResolvedInput> {
     let service_definition = load_and_parse_service(&format!("resources/{}", service)).unwrap();
     let api_endpoint = service_definition.get(endpoint).unwrap();
@@ -33,9 +38,11 @@ fn parse_flags(service: &str, endpoint: &str, input: &[String]) -> HashMap<Strin
         );
         // Skip over output (for now) later it can be used to deduce jmespath
         if flag == "output" {
+            iter.next();
             continue;
         }
-        if flag == "--query" {
+        if flag == "query" {
+            parse_jmespath_query(iter.next().unwrap());
             continue;
         }
         let input_type = match api_endpoint.inputs.get(&flag) {
